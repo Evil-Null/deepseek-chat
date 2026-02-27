@@ -12,7 +12,7 @@ SYMLINK_PATH="$HOME/.local/bin/dschat"
 echo ""
 echo "  ╔═══════════════════════════════════════╗"
 echo "  ║        DS Chat — Installer            ║"
-echo "  ║   DeepSeek AI Terminal Client v1.0    ║"
+echo "  ║   DeepSeek AI Terminal Client v1.1    ║"
 echo "  ╚═══════════════════════════════════════╝"
 echo ""
 
@@ -55,7 +55,7 @@ echo "  [..] Installing dependencies..."
 source "$INSTALL_DIR/.venv/bin/activate"
 pip install --upgrade pip --quiet 2>/dev/null
 pip install -e "$INSTALL_DIR" --quiet 2>&1 | tail -1
-echo "  [OK] All 9 dependencies installed"
+echo "  [OK] All 8 dependencies installed"
 
 # ─── Setup .env if needed ───
 if [ ! -f "$INSTALL_DIR/.env" ]; then

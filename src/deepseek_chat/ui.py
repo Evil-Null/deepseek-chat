@@ -1,4 +1,4 @@
-from rich.console import Console, Group
+from rich.console import Group
 from rich.panel import Panel
 from rich.markdown import Markdown
 from rich.table import Table
@@ -67,12 +67,14 @@ class UIRenderer:
             subtitle="[dim]streaming...[/dim]",
         )
 
-    def render_response(self, response: APIResponse, model: str) -> Panel:
+    def render_response(
+        self, response: APIResponse, model: str, show_reasoning: bool = True
+    ) -> Panel:
         """Final response panel with all metadata."""
         parts = []
 
         # Reasoning content (R1 model)
-        if response.reasoning_content:
+        if show_reasoning and response.reasoning_content:
             parts.append(Rule("Reasoning", style="dim"))
             parts.append(Text(response.reasoning_content, style="dim italic"))
             parts.append(Text())

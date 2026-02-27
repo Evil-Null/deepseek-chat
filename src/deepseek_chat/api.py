@@ -4,9 +4,8 @@ from typing import Generator
 
 import httpx
 from httpx_sse import connect_sse
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
-from .config import AppConfig, MODELS
+from .config import AppConfig, MODELS, REASONING_MODELS
 from .models import APIResponse, UsageInfo, CostInfo
 
 logger = logging.getLogger(__name__)
@@ -47,8 +46,8 @@ class DeepSeekClient:
             "max_tokens": self.config.max_tokens,
             "stream": True,
         }
-        # deepseek-reasoner doesn't support temperature/top_p
-        if model != "deepseek-reasoner":
+        # Reasoning models don't support temperature/top_p
+        if model not in REASONING_MODELS:
             payload["temperature"] = self.config.temperature
             payload["top_p"] = self.config.top_p
         payload.update(overrides)
@@ -68,6 +67,7 @@ class DeepSeekClient:
         full_content = ""
         full_reasoning = ""
         final_usage = {}
+        finish_reason = "stop"
 
         try:
             with connect_sse(
@@ -101,7 +101,14 @@ class DeepSeekClient:
                     if not choices:
                         continue
 
-                    delta = choices[0].get("delta", {})
+                    choice = choices[0]
+
+                    # Capture finish_reason
+                    fr = choice.get("finish_reason")
+                    if fr:
+                        finish_reason = fr
+
+                    delta = choice.get("delta", {})
 
                     # Reasoning content (R1 model)
                     reasoning_delta = delta.get("reasoning_content", "")
@@ -123,10 +130,12 @@ class DeepSeekClient:
             raise APIError(f"Network error: {e}")
 
         # Build final response
-        yield self._build_final_response(full_content, full_reasoning, final_usage, model)
+        yield self._build_final_response(
+            full_content, full_reasoning, final_usage, model, finish_reason
+        )
 
     def _build_final_response(
-        self, content: str, reasoning: str, usage_raw: dict, model: str
+        self, content: str, reasoning: str, usage_raw: dict, model: str, finish_reason: str
     ) -> APIResponse:
         """Build final APIResponse with usage and cost calculation."""
         usage = UsageInfo(
@@ -154,25 +163,8 @@ class DeepSeekClient:
             usage=usage,
             cost=cost,
             model=model,
-            finish_reason="stop",
+            finish_reason=finish_reason,
         )
-
-    @retry(
-        stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=30),
-        retry=retry_if_exception_type((httpx.TransportError, httpx.TimeoutException)),
-        reraise=True,
-    )
-    def chat(self, messages: list[dict], model: str, **overrides) -> APIResponse:
-        """Non-streaming fallback with retries."""
-        payload = self._build_payload(messages, model, stream=False, **overrides)
-        response = self.client.post("/chat/completions", json=payload)
-        self._check_response(response)
-        data = response.json()
-        content = data["choices"][0]["message"]["content"]
-        reasoning = data["choices"][0]["message"].get("reasoning_content", "")
-        usage_raw = data.get("usage", {})
-        return self._build_final_response(content, reasoning, usage_raw, model)
 
     def _check_response(self, response: httpx.Response):
         if response.status_code == 401:
