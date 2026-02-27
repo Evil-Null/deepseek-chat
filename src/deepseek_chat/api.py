@@ -76,6 +76,10 @@ class DeepSeekClient:
                 # Check HTTP status before iterating
                 if event_source.response.status_code == 401:
                     raise AuthenticationError("Invalid API key", 401)
+                if event_source.response.status_code == 402:
+                    raise APIError(
+                        "Insufficient balance. Top up at platform.deepseek.com/top_up", 402
+                    )
                 if event_source.response.status_code == 429:
                     raise RateLimitError("Rate limited. Wait and retry.", 429)
                 if event_source.response.status_code >= 400:
@@ -169,6 +173,10 @@ class DeepSeekClient:
     def _check_response(self, response: httpx.Response):
         if response.status_code == 401:
             raise AuthenticationError("Invalid API key", 401)
+        if response.status_code == 402:
+            raise APIError(
+                "Insufficient balance. Top up at platform.deepseek.com/top_up", 402
+            )
         if response.status_code == 429:
             raise RateLimitError("Rate limited. Wait and retry.", 429)
         if response.status_code >= 400:
