@@ -1,0 +1,22 @@
+# DS Chat Configuration
+# Copy to ~/.config/deepseek-chat/config.yaml to customize
+
+# Default model: deepseek-chat, deepseek-reasoner
+default_model: deepseek-chat
+
+# Generation parameters
+temperature: 0.2
+max_tokens: 4096
+top_p: 0.9
+
+# System prompt
+system_prompt: "Be helpful, accurate, and concise."
+
+# UI preferences
+show_cost: true
+show_reasoning: true
+
+# Paths (defaults shown)
+# db_path: ~/.local/share/deepseek-chat/history.db
+# log_path: ~/.local/share/deepseek-chat/dschat.log
+# export_dir: ~/Desktop
