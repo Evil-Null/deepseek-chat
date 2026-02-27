@@ -1,12 +1,48 @@
+import argparse
 import sys
 
 
 def main():
+    parser = argparse.ArgumentParser(
+        prog="dschat",
+        description="DS Chat — Professional DeepSeek AI Terminal Client",
+    )
+    parser.add_argument(
+        "-v", "--version", action="store_true", help="Show version and exit"
+    )
+    parser.add_argument(
+        "-q", "--question", type=str, help="Ask a question and exit (inline mode)"
+    )
+    parser.add_argument(
+        "-m", "--model", type=str, help="Model to use (deepseek-chat, deepseek-reasoner)"
+    )
+
+    args = parser.parse_args()
+
+    if args.version:
+        from . import __version__
+        print(f"DS Chat v{__version__}")
+        return
+
     try:
         from .app import ChatApp
 
         app = ChatApp()
-        app.run()
+
+        # Override model if specified
+        if args.model:
+            from .config import MODELS
+            if args.model in MODELS:
+                app.current_model = args.model
+            else:
+                valid = ", ".join(MODELS.keys())
+                print(f"  Unknown model: {args.model}. Valid: {valid}", file=sys.stderr)
+                sys.exit(1)
+
+        if args.question:
+            app.run_inline(args.question)
+        else:
+            app.run()
     except KeyboardInterrupt:
         pass
     except Exception as e:
@@ -25,7 +61,7 @@ def _handle_fatal_error(error: Exception):
             msg = err["msg"]
             if "DEEPSEEK_API_KEY" in field or "api_key" in field:
                 print(
-                    f"  - Missing API key. Set DEEPSEEK_API_KEY in .env or environment.",
+                    "  - Missing API key. Set DEEPSEEK_API_KEY in .env or environment.",
                     file=sys.stderr,
                 )
             else:

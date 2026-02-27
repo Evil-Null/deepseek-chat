@@ -10,7 +10,7 @@ class Command:
     args: str = ""
 
 
-# Registry of all commands (no /search — DeepSeek has no search API)
+# Registry of all commands
 COMMANDS = [
     Command("/help", ["/h", "/?"], "Show available commands", "cmd_help"),
     Command("/model", ["/m"], "Switch model", "cmd_model", "[model_name]"),
@@ -22,6 +22,9 @@ COMMANDS = [
     Command("/rename", ["/rn"], "Rename current session", "cmd_rename", "<name>"),
     Command("/export", ["/e"], "Export session (md/json)", "cmd_export", "[format]"),
     Command("/cost", [], "Show session cost summary", "cmd_cost"),
+    Command("/temp", [], "Set temperature (0.0-2.0)", "cmd_temp", "[value]"),
+    Command("/top_p", [], "Set top-p (0.0-1.0)", "cmd_top_p", "[value]"),
+    Command("/maxtokens", [], "Set max output tokens", "cmd_maxtokens", "[value]"),
     Command("/system", [], "Change system prompt", "cmd_system", "<prompt>"),
     Command("/info", [], "Show current settings", "cmd_info"),
     Command("/new", ["/n"], "Start a new session", "cmd_new"),

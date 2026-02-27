@@ -1,8 +1,11 @@
+import logging
 from pathlib import Path
 
 import yaml
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+logger = logging.getLogger(__name__)
 
 # Project root: deepseek-chat/ (3 levels up from this file: config.py -> deepseek_chat/ -> src/ -> deepseek-chat/)
 _PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
@@ -24,6 +27,9 @@ MODELS = {
     },
 }
 
+# Models that don't support temperature/top_p
+REASONING_MODELS = {"deepseek-reasoner"}
+
 
 class AppConfig(BaseSettings):
     model_config = SettingsConfigDict(
@@ -42,9 +48,6 @@ class AppConfig(BaseSettings):
     temperature: float = 0.2
     max_tokens: int = 4096
     top_p: float = 0.9
-
-    # Streaming
-    stream_mode: str = "full"
 
     # System prompt
     system_prompt: str = "Be helpful, accurate, and concise."
@@ -72,6 +75,11 @@ def load_config() -> AppConfig:
     yaml_path = Path("~/.config/deepseek-chat/config.yaml").expanduser()
     yaml_overrides = {}
     if yaml_path.exists():
-        with open(yaml_path, encoding="utf-8") as f:
-            yaml_overrides = yaml.safe_load(f) or {}
+        try:
+            with open(yaml_path, encoding="utf-8") as f:
+                yaml_overrides = yaml.safe_load(f) or {}
+        except yaml.YAMLError as e:
+            logger.warning("Invalid YAML config, using defaults: %s", e)
+        except OSError as e:
+            logger.warning("Cannot read config file, using defaults: %s", e)
     return AppConfig(**yaml_overrides)

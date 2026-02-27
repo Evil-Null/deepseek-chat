@@ -11,6 +11,11 @@ from .ui import UIRenderer
 logger = logging.getLogger(__name__)
 
 
+class StreamCancelled(Exception):
+    """User cancelled streaming with Ctrl+C."""
+    pass
+
+
 class StreamController:
     """Manages the real-time streaming display."""
 
@@ -27,6 +32,7 @@ class StreamController:
         Stream a response with live display.
         Returns the final APIResponse with all metadata.
         Raises APIError subclasses to the caller (app.py) for handling.
+        Raises StreamCancelled if user presses Ctrl+C during streaming.
         """
         accumulated = ""
         accumulated_reasoning = ""
@@ -55,7 +61,13 @@ class StreamController:
 
                 # Replace streaming panel with final polished response before Live exits
                 if api_response:
-                    live.update(self.ui.render_response(api_response, model))
+                    live.update(self.ui.render_response(
+                        api_response, model,
+                        show_reasoning=self.config.show_reasoning,
+                    ))
+        except KeyboardInterrupt:
+            logger.debug("Streaming cancelled by user (Ctrl+C)")
+            raise StreamCancelled()
         except APIError:
             # Let API errors propagate to app.py for user-facing handling
             logger.debug("API error during streaming, propagating to app")
