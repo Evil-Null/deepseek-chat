@@ -29,3 +29,6 @@ Thumbs.db
 
 # Distribution
 *.zip
+
+# Internal dev files
+ROLE.md
